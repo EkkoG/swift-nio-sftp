@@ -4,6 +4,8 @@ Standalone SFTP v3 client and server support built on top of [`swift-nio-ssh`](h
 
 License: MIT
 
+Tutorial: [docs/TUTORIAL.md](docs/TUTORIAL.md)
+
 ## What it provides
 
 - `NIOSFTP` library target
@@ -67,16 +69,12 @@ rooted filesystem implementation.
 Run tests:
 
 ```bash
-CLANG_MODULE_CACHE_PATH=$PWD/.build/clang-module-cache \
-SWIFTPM_MODULECACHE_OVERRIDE=$PWD/.build/module-cache \
 swift test
 ```
 
 Run the test suite:
 
 ```bash
-CLANG_MODULE_CACHE_PATH=$PWD/.build/clang-module-cache \
-SWIFTPM_MODULECACHE_OVERRIDE=$PWD/.build/module-cache \
 swift test --filter NIOSFTPTests
 ```
 
@@ -87,8 +85,6 @@ SFTP_TEST_HOST=host \
 SFTP_TEST_USER=user \
 SFTP_TEST_PASSWORD=secret \
 SFTP_TEST_ROOT=/tmp \
-CLANG_MODULE_CACHE_PATH=$PWD/.build/clang-module-cache \
-SWIFTPM_MODULECACHE_OVERRIDE=$PWD/.build/module-cache \
 swift run NIOSFTPWhiteboxDemo
 ```
 
@@ -106,8 +102,6 @@ SFTP_SERVER_PORT=2222 \
 SFTP_SERVER_USER=nio \
 SFTP_SERVER_PASSWORD=gottagofast \
 SFTP_SERVER_ROOT=/tmp \
-CLANG_MODULE_CACHE_PATH=$PWD/.build/clang-module-cache \
-SWIFTPM_MODULECACHE_OVERRIDE=$PWD/.build/module-cache \
 swift run NIOSFTPServerDemo
 ```
 
@@ -119,7 +113,13 @@ SFTP_TEST_PORT=2222 \
 SFTP_TEST_USER=nio \
 SFTP_TEST_PASSWORD=gottagofast \
 SFTP_TEST_ROOT=/ \
-CLANG_MODULE_CACHE_PATH=$PWD/.build/clang-module-cache \
-SWIFTPM_MODULECACHE_OVERRIDE=$PWD/.build/module-cache \
 swift run NIOSFTPWhiteboxDemo
+```
+
+If you are running in a restricted sandbox that blocks SwiftPM or clang cache
+writes, you may need temporary overrides such as:
+
+```bash
+CLANG_MODULE_CACHE_PATH=$PWD/.build/clang-module-cache
+SWIFTPM_MODULECACHE_OVERRIDE=$PWD/.build/module-cache
 ```
