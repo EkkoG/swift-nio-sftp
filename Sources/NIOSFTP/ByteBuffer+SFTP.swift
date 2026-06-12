@@ -43,6 +43,16 @@ extension ByteBuffer {
     }
 
     mutating func readSFTPFrame() throws -> SFTPInboundPacket? {
+        try self.readSFTPFrame(using: SFTPInboundPacketParser.parse(type:payload:))
+    }
+
+    mutating func readSFTPServerFrame() throws -> SFTPServerInboundPacket? {
+        try self.readSFTPFrame(using: SFTPServerInboundPacketParser.parse(type:payload:))
+    }
+
+    private mutating func readSFTPFrame<T>(
+        using parser: (UInt8, ByteBuffer) throws -> T
+    ) throws -> T? {
         guard let length = self.getInteger(at: self.readerIndex, as: UInt32.self) else {
             return nil
         }
@@ -63,7 +73,7 @@ extension ByteBuffer {
         guard let payload = self.readSlice(length: frameLength - 1) else {
             return nil
         }
-        return try SFTPInboundPacketParser.parse(type: typeRaw, payload: payload)
+        return try parser(typeRaw, payload)
     }
 
     @discardableResult

@@ -1,7 +1,9 @@
 // Copyright (c) 2026 EkkoG.
 // SPDX-License-Identifier: MIT
 
+import Foundation
 import NIOCore
+import NIOSSH
 
 public struct SFTPVersion: Sendable, Equatable {
     public var rawValue: UInt32
@@ -326,6 +328,7 @@ public enum SFTPError: Error, Sendable, Equatable {
     case protocolViolation(String)
     case unexpectedResponse(String)
     case status(SFTPStatus)
+    case invalidPath(String)
 }
 
 public struct SFTPClientEvent: Sendable, Equatable {
@@ -333,5 +336,119 @@ public struct SFTPClientEvent: Sendable, Equatable {
 
     public init(standardError: ByteBuffer) {
         self.standardError = standardError
+    }
+}
+
+public struct SFTPServerFileHandle: Sendable, Equatable {
+    public var bytes: ByteBuffer
+
+    public init(bytes: ByteBuffer) {
+        self.bytes = bytes
+    }
+}
+
+public struct SFTPServerDirectoryHandle: Sendable, Equatable {
+    public var bytes: ByteBuffer
+
+    public init(bytes: ByteBuffer) {
+        self.bytes = bytes
+    }
+}
+
+public struct SFTPServerContext: Sendable {
+    public let channel: Channel
+
+    public var eventLoop: EventLoop {
+        self.channel.eventLoop
+    }
+
+    public var allocator: ByteBufferAllocator {
+        self.channel.allocator
+    }
+
+    public init(channel: Channel) {
+        self.channel = channel
+    }
+}
+
+public protocol SFTPServerBackend: Sendable {
+    var advertisedExtensions: [SFTPExtension] { get }
+
+    func open(
+        path: String,
+        flags: SFTPOpenFlags,
+        attributes: SFTPAttributes,
+        context: SFTPServerContext
+    ) -> EventLoopFuture<SFTPServerFileHandle>
+    func close(fileHandle: SFTPServerFileHandle, context: SFTPServerContext) -> EventLoopFuture<Void>
+    func close(directoryHandle: SFTPServerDirectoryHandle, context: SFTPServerContext) -> EventLoopFuture<Void>
+    func read(
+        fileHandle: SFTPServerFileHandle,
+        offset: UInt64,
+        length: UInt32,
+        context: SFTPServerContext
+    ) -> EventLoopFuture<ByteBuffer?>
+    func write(
+        fileHandle: SFTPServerFileHandle,
+        offset: UInt64,
+        data: ByteBuffer,
+        context: SFTPServerContext
+    ) -> EventLoopFuture<Void>
+    func stat(path: String, context: SFTPServerContext) -> EventLoopFuture<SFTPAttributes>
+    func lstat(path: String, context: SFTPServerContext) -> EventLoopFuture<SFTPAttributes>
+    func fstat(fileHandle: SFTPServerFileHandle, context: SFTPServerContext) -> EventLoopFuture<SFTPAttributes>
+    func setstat(path: String, attributes: SFTPAttributes, context: SFTPServerContext) -> EventLoopFuture<Void>
+    func fsetstat(
+        fileHandle: SFTPServerFileHandle,
+        attributes: SFTPAttributes,
+        context: SFTPServerContext
+    ) -> EventLoopFuture<Void>
+    func opendir(path: String, context: SFTPServerContext) -> EventLoopFuture<SFTPServerDirectoryHandle>
+    func readdir(
+        directoryHandle: SFTPServerDirectoryHandle,
+        context: SFTPServerContext
+    ) -> EventLoopFuture<[SFTPNameEntry]?>
+    func remove(path: String, context: SFTPServerContext) -> EventLoopFuture<Void>
+    func mkdir(path: String, attributes: SFTPAttributes, context: SFTPServerContext) -> EventLoopFuture<Void>
+    func rmdir(path: String, context: SFTPServerContext) -> EventLoopFuture<Void>
+    func realpath(path: String, context: SFTPServerContext) -> EventLoopFuture<String>
+    func rename(oldPath: String, newPath: String, context: SFTPServerContext) -> EventLoopFuture<Void>
+    func readlink(path: String, context: SFTPServerContext) -> EventLoopFuture<String>
+    func symlink(linkPath: String, targetPath: String, context: SFTPServerContext) -> EventLoopFuture<Void>
+    func posixRename(oldPath: String, newPath: String, context: SFTPServerContext) -> EventLoopFuture<Void>
+    func fsync(fileHandle: SFTPServerFileHandle, context: SFTPServerContext) -> EventLoopFuture<Void>
+    func statvfs(path: String, context: SFTPServerContext) -> EventLoopFuture<SFTPFileSystemAttributes>
+    func fstatvfs(
+        fileHandle: SFTPServerFileHandle,
+        context: SFTPServerContext
+    ) -> EventLoopFuture<SFTPFileSystemAttributes>
+    func hardlink(oldPath: String, newPath: String, context: SFTPServerContext) -> EventLoopFuture<Void>
+    func copyData(
+        from source: SFTPServerFileHandle,
+        readOffset: UInt64,
+        length: UInt64,
+        to destination: SFTPServerFileHandle,
+        writeOffset: UInt64,
+        context: SFTPServerContext
+    ) -> EventLoopFuture<Void>
+}
+
+public final class SFTPServer: @unchecked Sendable {
+    public let channel: Channel
+    public let backend: any SFTPServerBackend
+
+    private let handler: SFTPServerHandler
+
+    private init(channel: Channel, backend: any SFTPServerBackend, handler: SFTPServerHandler) {
+        self.channel = channel
+        self.backend = backend
+        self.handler = handler
+    }
+
+    public static func start(on channel: Channel, backend: any SFTPServerBackend) -> EventLoopFuture<SFTPServer> {
+        let handler = SFTPServerHandler(loop: channel.eventLoop, allocator: channel.allocator, backend: backend)
+        return channel.pipeline.addHandler(handler).map {
+            SFTPServer(channel: channel, backend: backend, handler: handler)
+        }
     }
 }

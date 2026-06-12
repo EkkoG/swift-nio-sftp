@@ -132,8 +132,17 @@ struct WhiteboxScenarioRunner {
         if sftp.supportsExtension(.fstatvfs) && sftp.supportsExtension(.statvfs) {
             let pathStats = try sftp.statvfs(path: filePath).wait()
             let handleStats = try sftp.fstatvfs(file: fileHandle).wait()
-            try assertCondition(pathStats == handleStats, "FSTATVFS mismatch")
-            results.append(.init(name: "FSTATVFS", detail: "bsize=\(handleStats.blockSize) flags=\(handleStats.flags.rawValue)"))
+            try assertCondition(pathStats.blockSize == handleStats.blockSize, "FSTATVFS block size mismatch")
+            try assertCondition(pathStats.fundamentalBlockSize == handleStats.fundamentalBlockSize, "FSTATVFS fundamental block size mismatch")
+            try assertCondition(pathStats.fileSystemID == handleStats.fileSystemID, "FSTATVFS filesystem id mismatch")
+            try assertCondition(pathStats.flags == handleStats.flags, "FSTATVFS flags mismatch")
+            try assertCondition(pathStats.maximumNameLength == handleStats.maximumNameLength, "FSTATVFS max name length mismatch")
+            results.append(
+                .init(
+                    name: "FSTATVFS",
+                    detail: "path_bsize=\(pathStats.blockSize) handle_bsize=\(handleStats.blockSize) fsid=\(handleStats.fileSystemID)"
+                )
+            )
         } else {
             results.append(.init(name: "FSTATVFS", detail: "skipped: unsupported"))
         }

@@ -13,6 +13,7 @@ let package = Package(
     products: [
         .library(name: "NIOSFTP", targets: ["NIOSFTP"]),
         .executable(name: "NIOSFTPWhiteboxDemo", targets: ["NIOSFTPWhiteboxDemo"]),
+        .executable(name: "NIOSFTPServerDemo", targets: ["NIOSFTPServerDemo"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.81.0"),
@@ -25,10 +26,20 @@ let package = Package(
             dependencies: [
                 .product(name: "NIOSSH", package: "swift-nio-ssh"),
                 .product(name: "NIOCore", package: "swift-nio"),
+                .product(name: "NIOPosix", package: "swift-nio"),
             ]
         ),
         .executableTarget(
             name: "NIOSFTPWhiteboxDemo",
+            dependencies: [
+                "NIOSFTP",
+                .product(name: "NIOSSH", package: "swift-nio-ssh"),
+                .product(name: "NIOCore", package: "swift-nio"),
+                .product(name: "NIOPosix", package: "swift-nio"),
+            ]
+        ),
+        .executableTarget(
+            name: "NIOSFTPServerDemo",
             dependencies: [
                 "NIOSFTP",
                 .product(name: "NIOSSH", package: "swift-nio-ssh"),
@@ -48,4 +59,3 @@ let package = Package(
         ),
     ]
 )
-
