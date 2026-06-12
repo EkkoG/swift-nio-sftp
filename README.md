@@ -4,10 +4,11 @@ Standalone SFTP v3 client support built on top of [`swift-nio-ssh`](https://gith
 
 License: MIT
 
-## What is included
+## What it provides
 
 - `NIOSFTP` library target
-- SFTP v3 client pipeline and typed file APIs
+- SFTP v3 client handshake over SSH `subsystem("sftp")`
+- Typed file and directory operations
 - Common OpenSSH extensions:
   - `posix-rename@openssh.com`
   - `fsync@openssh.com`
@@ -16,19 +17,37 @@ License: MIT
   - `hardlink@openssh.com`
   - `copy-data`
 - `NIOSFTPWhiteboxDemo` for real-server verification
-- Embedded/unit tests in `NIOSFTPTests`
+- Embedded and end-to-end tests in `NIOSFTPTests`
 
 ## Package dependency
 
+Add the package:
+
 ```swift
-.package(url: "https://github.com/<you>/swift-nio-sftp.git", branch: "main")
+.package(url: "https://github.com/EkkoG/swift-nio-sftp.git", branch: "main")
 ```
 
-Then depend on `NIOSFTP` in your target.
+Then depend on `NIOSFTP`:
+
+```swift
+.target(
+    name: "YourTarget",
+    dependencies: [
+        .product(name: "NIOSFTP", package: "swift-nio-sftp"),
+        .product(name: "NIOSSH", package: "swift-nio-ssh"),
+    ]
+)
+```
+
+## Current scope
+
+- Client-side SFTP only
+- Protocol version: v3
+- Built on public `swift-nio-ssh` APIs
 
 ## Development
 
-Run embedded tests:
+Run tests:
 
 ```bash
 CLANG_MODULE_CACHE_PATH=$PWD/.build/clang-module-cache \
@@ -46,7 +65,7 @@ SFTP_TEST_ROOT=/tmp \
 swift run NIOSFTPWhiteboxDemo
 ```
 
-Optional for CLI cross-checks:
+Optional for `sftp` CLI cross-checks:
 
 ```bash
 SFTP_TEST_KEY_PATH=/path/to/private_key
