@@ -1,6 +1,6 @@
 # swift-nio-sftp
 
-Standalone SFTP v3 client and server support built on top of [`swift-nio-ssh`](https://github.com/apple/swift-nio-ssh).
+SFTP v3 client and server support built on top of [`swift-nio-ssh`](https://github.com/apple/swift-nio-ssh).
 
 License: MIT
 
